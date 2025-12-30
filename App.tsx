@@ -116,6 +116,21 @@ const App: React.FC = () => {
     setIsAddModalOpen(true);
   };
 
+  const handleInspectData = () => {
+    console.group("🌳 LegacyTree Data Inspection");
+    console.log("Current Users Count:", people.length);
+    console.table(people.map(p => ({
+      ID: p.id,
+      Name: p.name,
+      Parent: p.parentId || 'None',
+      Spouse: p.spouseId || 'None',
+      Birth: p.birthDate
+    })));
+    console.log("Raw JSON:", JSON.stringify(people, null, 2));
+    console.groupEnd();
+    alert("Data logged to browser console! (Press F12 to view)");
+  };
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
       <nav className="h-16 flex items-center justify-between px-6 bg-white border-b border-slate-200 z-40 shadow-sm shrink-0">
@@ -135,9 +150,14 @@ const App: React.FC = () => {
           ) : (
             <div className="flex items-center gap-4">
               {currentUser.role === 'SUPER_ADMIN' && (
-                <Button variant="outline" size="sm" onClick={handleAddRoot} className="hidden md:flex">
-                  <span className="mr-2"><ICONS.Plus /></span> New Branch
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={handleInspectData} className="text-slate-500">
+                    <span className="mr-2"><ICONS.Terminal /></span> Inspect Data
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleAddRoot}>
+                    <span className="mr-2"><ICONS.Plus /></span> New Branch
+                  </Button>
+                </div>
               )}
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{currentUser.role.replace('_', ' ')}</p>
