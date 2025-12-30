@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { Person } from '../types';
 
@@ -96,11 +96,21 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
     const spouses = data.filter(p => !lineageIds.has(p.id));
 
     const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove();
+    
+    // Create or select the container 'g'
+    let g = svg.select<SVGGElement>('g.main-container');
+    if (g.empty()) {
+      g = svg.append('g').attr('class', 'main-container');
+    }
+
+    // Capture current transform before clearing to prevent jumping
+    const currentTransform = d3.zoomTransform(svgRef.current as any);
+
+    // Instead of svg.selectAll('*').remove(), we clear the contents of 'g'
+    g.selectAll('*').remove();
 
     const width = svgRef.current.clientWidth;
     const height = svgRef.current.clientHeight;
-    const g = svg.append('g');
 
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 4])
@@ -108,12 +118,18 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
 
     svg.call(zoom);
 
+    // Apply the current transform to the newly cleared g to maintain state
+    g.attr('transform', currentTransform.toString());
+
     // Increase horizontal spacing significantly to account for spouses
     const treeLayout = d3.tree<Person>().nodeSize([500, 260]);
     const treeData = treeLayout(stratifiedRoot);
 
+    // Initial positioning only if not yet initialized
     if (!svg.attr('data-initialized')) {
-      svg.call(zoom.transform, d3.zoomIdentity.translate(width / 2, 100).scale(0.6));
+      const initialTransform = d3.zoomIdentity.translate(width / 2, 100).scale(0.6);
+      svg.call(zoom.transform, initialTransform);
+      g.attr('transform', initialTransform.toString());
       svg.attr('data-initialized', 'true');
     }
 
@@ -140,7 +156,6 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
       const childrenExist = (dNode.children || dNode._children)?.length > 0;
       const canToggle = isMainLineage && (spouseExists || childrenExist);
 
-      // Adjusted card size to better fit contents
       const cardWidth = 180;
       const cardHeight = 84;
 
@@ -152,7 +167,6 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
           onSelectPerson(personData.id);
         });
 
-      // Background Rect
       personG.append('rect')
         .attr('width', cardWidth)
         .attr('height', cardHeight)
@@ -164,7 +178,6 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
         .attr('stroke-width', 2)
         .attr('class', 'transition-all duration-300 group-hover:shadow-lg group-hover:stroke-indigo-400');
 
-      // Avatar Group - shifted to stay inside the rect
       const imgG = personG.append('g').attr('transform', `translate(${-cardWidth/2 + 34}, 0)`);
       imgG.append('circle').attr('r', 28).attr('fill', '#f8fafc');
       
@@ -177,7 +190,6 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
         .attr('clip-path', `url(#${clipId})`)
         .attr('preserveAspectRatio', 'xMidYMid slice');
 
-      // Info Text - shifted right to avoid avatar
       personG.append('text')
         .attr('x', -cardWidth/2 + 70).attr('y', -5)
         .style('font-size', '14px').style('font-weight', '700').style('fill', '#1e293b')
@@ -231,12 +243,10 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
       const isExpanded = expandedIds.has(mainPerson.id);
       const spouse = spouses.find(s => s.spouseId === mainPerson.id);
 
-      // Increased spouseOffset to 210 to ensure no overlap even with wider cards
       const spouseOffset = -210;
 
       if (spouse && isExpanded) {
         const linkLine = nodeSelection.append('g').attr('class', 'marriage-link');
-        // Bridge lines between cards
         linkLine.append('line').attr('x1', -120).attr('x2', -90).attr('y1', -5).attr('y2', -5).attr('stroke', '#cbd5e1').attr('stroke-width', 2);
         linkLine.append('line').attr('x1', -120).attr('x2', -90).attr('y1', 5).attr('y2', 5).attr('stroke', '#cbd5e1').attr('stroke-width', 2);
 
