@@ -20,7 +20,7 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   
-  // Track expanded nodes. Start empty so everything is collapsed on initial load.
+  // Track expanded nodes.
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const toggleExpand = (id: string) => {
@@ -38,12 +38,8 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
   useEffect(() => {
     if (!svgRef.current || data.length === 0) return;
 
-    // Identify all IDs that are currently acting as parents
     const parentIds = new Set(data.map(p => p.parentId).filter(Boolean));
 
-    /**
-     * Determine lineage anchors for D3 stratification.
-     */
     const lineageSource = data.filter(p => {
       if (p.parentId || parentIds.has(p.id)) return true;
       if (!p.spouseId) return true;
@@ -89,7 +85,6 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
       return;
     }
 
-    // Apply Collapse Logic: If a node is not in expandedIds, hide its children
     stratifiedRoot.descendants().forEach((d: any) => {
       if (d.id !== VIRTUAL_ROOT_ID && !expandedIds.has(d.id)) {
         d._children = d.children;
@@ -113,7 +108,8 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
 
     svg.call(zoom);
 
-    const treeLayout = d3.tree<Person>().nodeSize([400, 240]);
+    // Increase horizontal spacing significantly to account for spouses
+    const treeLayout = d3.tree<Person>().nodeSize([500, 260]);
     const treeData = treeLayout(stratifiedRoot);
 
     if (!svg.attr('data-initialized')) {
@@ -144,6 +140,10 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
       const childrenExist = (dNode.children || dNode._children)?.length > 0;
       const canToggle = isMainLineage && (spouseExists || childrenExist);
 
+      // Adjusted card size to better fit contents
+      const cardWidth = 180;
+      const cardHeight = 84;
+
       const personG = selection.append('g')
         .attr('transform', `translate(${offsetX}, 0)`)
         .attr('class', 'cursor-pointer group')
@@ -152,18 +152,20 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
           onSelectPerson(personData.id);
         });
 
+      // Background Rect
       personG.append('rect')
-        .attr('width', 160)
-        .attr('height', 80)
-        .attr('x', -80)
-        .attr('y', -40)
-        .attr('rx', 16)
+        .attr('width', cardWidth)
+        .attr('height', cardHeight)
+        .attr('x', -cardWidth / 2)
+        .attr('y', -cardHeight / 2)
+        .attr('rx', 18)
         .attr('fill', 'white')
-        .attr('stroke', isExpanded ? '#4f46e5' : '#e2e8f0')
+        .attr('stroke', isMainLineage && isExpanded ? '#4f46e5' : '#e2e8f0')
         .attr('stroke-width', 2)
         .attr('class', 'transition-all duration-300 group-hover:shadow-lg group-hover:stroke-indigo-400');
 
-      const imgG = personG.append('g').attr('transform', 'translate(-70, 0)');
+      // Avatar Group - shifted to stay inside the rect
+      const imgG = personG.append('g').attr('transform', `translate(${-cardWidth/2 + 34}, 0)`);
       imgG.append('circle').attr('r', 28).attr('fill', '#f8fafc');
       
       const clipId = `clip-${personData.id.replace(/\W/g, '')}`;
@@ -175,19 +177,20 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
         .attr('clip-path', `url(#${clipId})`)
         .attr('preserveAspectRatio', 'xMidYMid slice');
 
+      // Info Text - shifted right to avoid avatar
       personG.append('text')
-        .attr('x', -32).attr('y', -5)
+        .attr('x', -cardWidth/2 + 70).attr('y', -5)
         .style('font-size', '14px').style('font-weight', '700').style('fill', '#1e293b')
         .text(personData.name.length > 14 ? personData.name.substring(0, 11) + '...' : personData.name);
       
       personG.append('text')
-        .attr('x', -32).attr('y', 15)
+        .attr('x', -cardWidth/2 + 70).attr('y', 15)
         .style('font-size', '11px').style('fill', '#94a3b8').style('font-weight', '500')
         .text(`${personData.birthDate.split('-')[0]}${personData.deathDate ? ' - ' + personData.deathDate.split('-')[0] : ''}`);
 
       if (canToggle) {
         const toggleBtn = personG.append('g')
-          .attr('transform', 'translate(0, 40)')
+          .attr('transform', `translate(0, ${cardHeight/2})`)
           .attr('class', 'toggle-btn')
           .on('click', (event: any) => {
             event.stopPropagation();
@@ -195,7 +198,7 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
           });
 
         toggleBtn.append('circle')
-          .attr('r', 10)
+          .attr('r', 11)
           .attr('fill', 'white')
           .attr('stroke', '#cbd5e1')
           .attr('stroke-width', 1.5);
@@ -203,7 +206,7 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
         toggleBtn.append('text')
           .attr('text-anchor', 'middle')
           .attr('dy', '4')
-          .style('font-size', '14px')
+          .style('font-size', '15px')
           .style('font-weight', 'bold')
           .style('fill', '#64748b')
           .text(isExpanded ? '−' : '+');
@@ -211,7 +214,7 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
 
       if (canEdit && onAddRelation && isMainLineage) {
         const addBtn = personG.append('g')
-          .attr('transform', 'translate(55, 40)')
+          .attr('transform', `translate(${cardWidth/2 - 25}, ${cardHeight/2})`)
           .attr('class', 'opacity-0 group-hover:opacity-100 transition-opacity duration-300')
           .on('click', (event: any) => {
             event.stopPropagation();
@@ -228,16 +231,18 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
       const isExpanded = expandedIds.has(mainPerson.id);
       const spouse = spouses.find(s => s.spouseId === mainPerson.id);
 
-      // Only show spouse if expanded
+      // Increased spouseOffset to 210 to ensure no overlap even with wider cards
+      const spouseOffset = -210;
+
       if (spouse && isExpanded) {
         const linkLine = nodeSelection.append('g').attr('class', 'marriage-link');
-        linkLine.append('line').attr('x1', -15).attr('x2', 15).attr('y1', -5).attr('y2', -5).attr('stroke', '#cbd5e1').attr('stroke-width', 1);
-        linkLine.append('line').attr('x1', -15).attr('x2', 15).attr('y1', 5).attr('y2', 5).attr('stroke', '#cbd5e1').attr('stroke-width', 1);
+        // Bridge lines between cards
+        linkLine.append('line').attr('x1', -120).attr('x2', -90).attr('y1', -5).attr('y2', -5).attr('stroke', '#cbd5e1').attr('stroke-width', 2);
+        linkLine.append('line').attr('x1', -120).attr('x2', -90).attr('y1', 5).attr('y2', 5).attr('stroke', '#cbd5e1').attr('stroke-width', 2);
 
-        renderPersonNode(nodeSelection, mainPerson, 92, true, d);
-        renderPersonNode(nodeSelection, spouse, -92, false, d);
+        renderPersonNode(nodeSelection, mainPerson, 0, true, d);
+        renderPersonNode(nodeSelection, spouse, spouseOffset, false, d);
       } else {
-        // If collapsed or no spouse, center the main person
         renderPersonNode(nodeSelection, mainPerson, 0, true, d);
       }
     });
@@ -251,11 +256,11 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
       <div className="absolute bottom-6 left-6 z-10 bg-white/80 backdrop-blur shadow-sm rounded-xl px-4 py-2 border border-slate-200 text-xs text-slate-500 font-medium space-y-1">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-indigo-600" />
-          <span>Click card for details</span>
+          <span>Parent lineage line points to blood descendant</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full border border-slate-400 bg-white flex items-center justify-center text-[10px]">+</div>
-          <span>Click to see spouse & children</span>
+          <span>Click to reveal spouse & branches</span>
         </div>
       </div>
 
