@@ -42,8 +42,6 @@ const App: React.FC = () => {
           const directChildren = people.filter(p => p.parentId === startId);
           return directChildren.some(child => isDescendant(child.id, searchId));
         };
-        // For branch admins, they can only add people to their assigned branch or its descendants.
-        // Adding a PARENT to the branch root is restricted to SUPER_ADMIN.
         return isDescendant(currentUser.assignedBranchId, targetId);
       }
     }
@@ -65,6 +63,8 @@ const App: React.FC = () => {
 
   const handleAddPerson = (data: Partial<Person> & { relType?: RelationType, targetId?: string }) => {
     const newId = `p-${Date.now()}`;
+    const target = people.find(p => p.id === data.targetId);
+
     const newPerson: Person = {
       id: newId,
       name: data.name || 'Unknown',
@@ -74,9 +74,8 @@ const App: React.FC = () => {
       bio: data.bio || '',
       mainImage: data.mainImage || 'https://picsum.photos/400/400',
       gallery: [],
-      // For CHILD relation, targetId becomes parent
-      parentId: data.relType === 'CHILD' ? data.targetId : undefined,
-      // For SPOUSE relation, set bidirectional spouseId later
+      // For CHILD relation, targetId becomes parent. For SIBLING, share parentId.
+      parentId: data.relType === 'CHILD' ? data.targetId : (data.relType === 'SIBLING' ? target?.parentId : undefined),
       spouseId: data.relType === 'SPOUSE' ? data.targetId : undefined,
     };
 
@@ -84,11 +83,27 @@ const App: React.FC = () => {
       let updated = [...prev, newPerson];
 
       if (data.relType === 'SPOUSE' && data.targetId) {
-        // Bidirectional link for spouses
         updated = updated.map(p => p.id === data.targetId ? { ...p, spouseId: newId } : p);
       } else if (data.relType === 'PARENT' && data.targetId) {
-        // If targetId is having a parent added, the new person becomes the parent of targetId
-        updated = updated.map(p => p.id === data.targetId ? { ...p, parentId: newId } : p);
+        // If adding a parent to a root person, propagate to all primary root siblings
+        if (target && !target.parentId) {
+          updated = updated.map(p => {
+            if (p.id === newId) return p;
+            // Target people who are root (no parent)
+            if (!p.parentId) {
+              // Safety: Ensure we don't accidentally tag a branch spouse as a root sibling.
+              // A branch spouse is someone without a parentId who is a spouse of someone who HAS a parentId.
+              const spouseOf = prev.find(s => s.spouseId === p.id);
+              if (spouseOf && spouseOf.parentId) return p;
+
+              return { ...p, parentId: newId };
+            }
+            return p;
+          });
+        } else {
+          // Normal case: just update the specific target's parent
+          updated = updated.map(p => p.id === data.targetId ? { ...p, parentId: newId } : p);
+        }
       }
       
       return updated;

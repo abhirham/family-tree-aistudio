@@ -22,7 +22,8 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
   // Set default relation type based on availability
   useEffect(() => {
     if (!isFirstPerson && targetPerson) {
-      if (!targetPerson.parentId) setRelType('PARENT');
+      // Default to SIBLING for root people to avoid accidental parent creation
+      if (!targetPerson.parentId) setRelType('SIBLING');
       else setRelType('CHILD');
     }
   }, [isFirstPerson, targetPerson]);
@@ -49,6 +50,7 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
 
   const showParentOption = targetPerson && !targetPerson.parentId;
   const showSpouseOption = targetPerson && !targetPerson.spouseId;
+  const showSiblingOption = targetPerson && !targetPerson.parentId;
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -96,6 +98,18 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
                   />
                   <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Child</span>
                 </label>
+                {showSiblingOption && (
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input 
+                      type="radio" 
+                      name="relType" 
+                      checked={relType === 'SIBLING'} 
+                      onChange={() => setRelType('SIBLING')}
+                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Sibling</span>
+                  </label>
+                )}
                 {showSpouseOption && (
                   <label className="flex items-center gap-2 cursor-pointer group">
                     <input 
