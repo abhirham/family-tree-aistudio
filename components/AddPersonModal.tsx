@@ -1,23 +1,32 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Person, Gender, RelationType } from '../types';
 import { Button } from './Button';
 import { ICONS } from '../constants';
 
 interface AddPersonModalProps {
-  parentId?: string;
+  targetPerson?: Person;
   onClose: () => void;
-  onSubmit: (data: Partial<Person> & { relType?: RelationType }) => void;
+  onSubmit: (data: Partial<Person> & { relType?: RelationType, targetId?: string }) => void;
   isFirstPerson: boolean;
 }
 
 export const AddPersonModal: React.FC<AddPersonModalProps> = ({ 
-  parentId, 
+  targetPerson, 
   onClose, 
   onSubmit,
   isFirstPerson 
 }) => {
   const [relType, setRelType] = useState<RelationType>('CHILD');
+  
+  // Set default relation type based on availability
+  useEffect(() => {
+    if (!isFirstPerson && targetPerson) {
+      if (!targetPerson.parentId) setRelType('PARENT');
+      else setRelType('CHILD');
+    }
+  }, [isFirstPerson, targetPerson]);
+
   const [formData, setFormData] = useState({
     name: '',
     gender: 'Male' as Gender,
@@ -29,15 +38,17 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFirstPerson && !parentId) return;
+    if (!isFirstPerson && !targetPerson) return;
     
     onSubmit({ 
       ...formData, 
-      parentId: relType === 'CHILD' ? parentId : undefined,
-      spouseId: relType === 'SPOUSE' ? parentId : undefined,
+      targetId: targetPerson?.id,
       relType
     });
   };
+
+  const showParentOption = targetPerson && !targetPerson.parentId;
+  const showSpouseOption = targetPerson && !targetPerson.spouseId;
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -47,7 +58,11 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
             <h2 className="text-xl font-bold text-slate-900">
               {isFirstPerson ? 'Begin Family Tree' : 'Add Family Member'}
             </h2>
-            <p className="text-sm text-slate-500">Record the details of your ancestor.</p>
+            <p className="text-sm text-slate-500">
+              {isFirstPerson 
+                ? 'Create the first ancestor of your heritage.' 
+                : `Adding a relative for ${targetPerson?.name}`}
+            </p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
             <ICONS.Close />
@@ -58,7 +73,19 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
           {!isFirstPerson && (
             <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 space-y-2">
               <label className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Relationship Type</label>
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4">
+                {showParentOption && (
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input 
+                      type="radio" 
+                      name="relType" 
+                      checked={relType === 'PARENT'} 
+                      onChange={() => setRelType('PARENT')}
+                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Parent</span>
+                  </label>
+                )}
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <input 
                     type="radio" 
@@ -69,16 +96,18 @@ export const AddPersonModal: React.FC<AddPersonModalProps> = ({
                   />
                   <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Child</span>
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input 
-                    type="radio" 
-                    name="relType" 
-                    checked={relType === 'SPOUSE'} 
-                    onChange={() => setRelType('SPOUSE')}
-                    className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Spouse</span>
-                </label>
+                {showSpouseOption && (
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input 
+                      type="radio" 
+                      name="relType" 
+                      checked={relType === 'SPOUSE'} 
+                      onChange={() => setRelType('SPOUSE')}
+                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Spouse</span>
+                  </label>
+                )}
               </div>
             </div>
           )}

@@ -1,7 +1,7 @@
 
 export type Gender = 'Male' | 'Female' | 'Other';
 
-export type RelationType = 'CHILD' | 'SPOUSE';
+export type RelationType = 'CHILD' | 'SPOUSE' | 'PARENT';
 
 export interface Person {
   id: string;

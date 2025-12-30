@@ -8,10 +8,11 @@ interface PersonDetailsProps {
   person: Person | null;
   onClose: () => void;
   onEdit?: (person: Person) => void;
+  onAddRelation?: (targetId: string) => void;
   canEdit: boolean;
 }
 
-export const PersonDetails: React.FC<PersonDetailsProps> = ({ person, onClose, onEdit, canEdit }) => {
+export const PersonDetails: React.FC<PersonDetailsProps> = ({ person, onClose, onEdit, onAddRelation, canEdit }) => {
   if (!person) return null;
 
   return (
@@ -21,12 +22,20 @@ export const PersonDetails: React.FC<PersonDetailsProps> = ({ person, onClose, o
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
             <ICONS.Close />
           </button>
-          {canEdit && onEdit && (
-            <Button variant="outline" size="sm" onClick={() => onEdit(person)}>
-              <span className="mr-2"><ICONS.Edit /></span>
-              Edit
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {canEdit && onAddRelation && (
+              <Button variant="ghost" size="sm" onClick={() => onAddRelation(person.id)}>
+                <span className="mr-2"><ICONS.Plus /></span>
+                Relative
+              </Button>
+            )}
+            {canEdit && onEdit && (
+              <Button variant="outline" size="sm" onClick={() => onEdit(person)}>
+                <span className="mr-2"><ICONS.Edit /></span>
+                Edit
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col items-center">
@@ -39,14 +48,14 @@ export const PersonDetails: React.FC<PersonDetailsProps> = ({ person, onClose, o
           </div>
           <h2 className="text-3xl font-serif font-bold text-slate-900 text-center leading-tight">{person.name}</h2>
           <p className="text-slate-500 font-medium mt-2">
-            {person.birthDate} {person.deathDate ? `— ${person.deathDate}` : '(Living)'}
+            {person.birthDate.split('-')[0]} {person.deathDate ? `— ${person.deathDate.split('-')[0]}` : '(Living)'}
           </p>
         </div>
 
         {person.spouseId && (
           <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
-             <h3 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Spouse</h3>
-             <p className="text-indigo-900 font-semibold italic text-lg">Partnered with their beloved.</p>
+             <h3 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Status</h3>
+             <p className="text-indigo-900 font-semibold italic text-lg">Partnered</p>
           </div>
         )}
 

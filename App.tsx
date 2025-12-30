@@ -16,7 +16,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [activeParentId, setActiveParentId] = useState<string | undefined>(undefined);
+  const [activeTargetId, setActiveTargetId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     localStorage.setItem('family_tree_data', JSON.stringify(people));
@@ -26,20 +26,25 @@ const App: React.FC = () => {
     people.find(p => p.id === selectedPersonId) || null, 
   [people, selectedPersonId]);
 
-  const canAddRoot = currentUser?.role === 'SUPER_ADMIN';
+  const activeTargetPerson = useMemo(() => 
+    people.find(p => p.id === activeTargetId), 
+  [people, activeTargetId]);
+
   const canEditTree = !!currentUser && (currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'BRANCH_ADMIN');
 
-  const checkAddPermission = useCallback((parentId?: string) => {
+  const checkAddPermission = useCallback((targetId?: string) => {
     if (!currentUser) return false;
     if (currentUser.role === 'SUPER_ADMIN') return true;
-    if (currentUser.role === 'BRANCH_ADMIN' && parentId) {
+    if (currentUser.role === 'BRANCH_ADMIN' && targetId) {
       if (currentUser.assignedBranchId) {
-        const isDescendant = (startId: string, targetId: string): boolean => {
-          if (startId === targetId) return true;
+        const isDescendant = (startId: string, searchId: string): boolean => {
+          if (startId === searchId) return true;
           const directChildren = people.filter(p => p.parentId === startId);
-          return directChildren.some(child => isDescendant(child.id, targetId));
+          return directChildren.some(child => isDescendant(child.id, searchId));
         };
-        return isDescendant(currentUser.assignedBranchId, parentId);
+        // For branch admins, they can only add people to their assigned branch or its descendants.
+        // Adding a PARENT to the branch root is restricted to SUPER_ADMIN.
+        return isDescendant(currentUser.assignedBranchId, targetId);
       }
     }
     return false;
@@ -58,7 +63,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => setCurrentUser(null);
 
-  const handleAddPerson = (data: Partial<Person> & { relType?: RelationType }) => {
+  const handleAddPerson = (data: Partial<Person> & { relType?: RelationType, targetId?: string }) => {
     const newId = `p-${Date.now()}`;
     const newPerson: Person = {
       id: newId,
@@ -69,29 +74,45 @@ const App: React.FC = () => {
       bio: data.bio || '',
       mainImage: data.mainImage || 'https://picsum.photos/400/400',
       gallery: [],
-      parentId: data.relType === 'CHILD' ? data.parentId : undefined,
-      spouseId: data.relType === 'SPOUSE' ? data.spouseId : undefined,
+      // For CHILD relation, targetId becomes parent
+      parentId: data.relType === 'CHILD' ? data.targetId : undefined,
+      // For SPOUSE relation, set bidirectional spouseId later
+      spouseId: data.relType === 'SPOUSE' ? data.targetId : undefined,
     };
 
     setPeople(prev => {
-      const updated = [...prev, newPerson];
-      // Bidirectional link for spouses
-      if (data.relType === 'SPOUSE' && data.spouseId) {
-        return updated.map(p => p.id === data.spouseId ? { ...p, spouseId: newId } : p);
+      let updated = [...prev, newPerson];
+
+      if (data.relType === 'SPOUSE' && data.targetId) {
+        // Bidirectional link for spouses
+        updated = updated.map(p => p.id === data.targetId ? { ...p, spouseId: newId } : p);
+      } else if (data.relType === 'PARENT' && data.targetId) {
+        // If targetId is having a parent added, the new person becomes the parent of targetId
+        updated = updated.map(p => p.id === data.targetId ? { ...p, parentId: newId } : p);
       }
+      
       return updated;
     });
 
     setIsAddModalOpen(false);
-    setActiveParentId(undefined);
+    setActiveTargetId(undefined);
   };
 
-  const handleOpenAddModal = (parentId?: string) => {
-    if (!checkAddPermission(parentId)) {
-      alert("You don't have permission to add people here.");
+  const handleOpenAddModal = (targetId?: string) => {
+    if (targetId && !checkAddPermission(targetId)) {
+      alert("You don't have permission to modify this branch.");
       return;
     }
-    setActiveParentId(parentId);
+    setActiveTargetId(targetId);
+    setIsAddModalOpen(true);
+  };
+
+  const handleAddRoot = () => {
+    if (currentUser?.role !== 'SUPER_ADMIN') {
+      alert("Only Super Admins can add new roots.");
+      return;
+    }
+    setActiveTargetId(undefined);
     setIsAddModalOpen(true);
   };
 
@@ -113,6 +134,11 @@ const App: React.FC = () => {
             </div>
           ) : (
             <div className="flex items-center gap-4">
+              {currentUser.role === 'SUPER_ADMIN' && (
+                <Button variant="outline" size="sm" onClick={handleAddRoot} className="hidden md:flex">
+                  <span className="mr-2"><ICONS.Plus /></span> New Branch
+                </Button>
+              )}
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{currentUser.role.replace('_', ' ')}</p>
                 <p className="text-sm font-semibold text-slate-700">{currentUser.name}</p>
@@ -133,17 +159,30 @@ const App: React.FC = () => {
           onAddRelation={handleOpenAddModal}
           canEdit={canEditTree}
         />
+        
+        {people.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-30">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl font-serif font-bold text-slate-900">Your Family Story Starts Here</h2>
+              <p className="text-slate-500 max-w-md mx-auto">Create the first record in your lineage to begin visualizing your family history.</p>
+              <Button size="lg" onClick={() => handleOpenAddModal()}>
+                Add First Person
+              </Button>
+            </div>
+          </div>
+        )}
       </main>
 
       <PersonDetails 
         person={selectedPerson} 
         onClose={() => setSelectedPersonId(null)} 
         canEdit={canEditTree}
+        onAddRelation={handleOpenAddModal}
       />
 
       {isAddModalOpen && (
         <AddPersonModal 
-          parentId={activeParentId}
+          targetPerson={activeTargetPerson}
           onClose={() => setIsAddModalOpen(false)}
           onSubmit={handleAddPerson}
           isFirstPerson={people.length === 0}
