@@ -120,7 +120,7 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
       .append('g')
       .attr('transform', d => `translate(${d.x},${d.y})`);
 
-    const renderPersonNode = (selection: any, personData: Person, offsetX: number) => {
+    const renderPersonNode = (selection: any, personData: Person, offsetX: number, showAdd: boolean) => {
       const personG = selection.append('g')
         .attr('transform', `translate(${offsetX}, 0)`)
         .attr('class', 'cursor-pointer group')
@@ -165,8 +165,8 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
         .style('font-size', '11px').style('fill', '#94a3b8').style('font-weight', '500')
         .text(`${personData.birthDate.split('-')[0]}${personData.deathDate ? ' - ' + personData.deathDate.split('-')[0] : ''}`);
 
-      // Action Button
-      if (canEdit && onAddRelation) {
+      // Action Button - Only show if showAdd is true and user has edit rights
+      if (canEdit && onAddRelation && showAdd) {
         const addBtn = personG.append('g')
           .attr('transform', 'translate(0, 52)')
           .attr('class', 'opacity-0 group-hover:opacity-100 transition-opacity duration-300')
@@ -191,10 +191,11 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
         linkLine.append('line').attr('x1', -15).attr('x2', 15).attr('y1', 5).attr('y2', 5).attr('stroke', '#cbd5e1').attr('stroke-width', 1);
 
         // Compact couple offset: 92px each way centers them nicely with a small gap
-        renderPersonNode(nodeSelection, mainPerson, 92);
-        renderPersonNode(nodeSelection, spouse, -92);
+        // showAdd is true for the main lineage person, false for the spouse
+        renderPersonNode(nodeSelection, mainPerson, 92, true);
+        renderPersonNode(nodeSelection, spouse, -92, false);
       } else {
-        renderPersonNode(nodeSelection, mainPerson, 0);
+        renderPersonNode(nodeSelection, mainPerson, 0, true);
       }
     });
 
