@@ -74,7 +74,6 @@ const App: React.FC = () => {
       bio: data.bio || '',
       mainImage: data.mainImage || 'https://picsum.photos/400/400',
       gallery: [],
-      // For CHILD relation, targetId becomes parent. For SIBLING, share parentId.
       parentId: data.relType === 'CHILD' ? data.targetId : (data.relType === 'SIBLING' ? target?.parentId : undefined),
       spouseId: data.relType === 'SPOUSE' ? data.targetId : undefined,
     };
@@ -85,27 +84,20 @@ const App: React.FC = () => {
       if (data.relType === 'SPOUSE' && data.targetId) {
         updated = updated.map(p => p.id === data.targetId ? { ...p, spouseId: newId } : p);
       } else if (data.relType === 'PARENT' && data.targetId) {
-        // If adding a parent to a root person, propagate to all primary root siblings
         if (target && !target.parentId) {
           updated = updated.map(p => {
             if (p.id === newId) return p;
-            // Target people who are root (no parent)
             if (!p.parentId) {
-              // Safety: Ensure we don't accidentally tag a branch spouse as a root sibling.
-              // A branch spouse is someone without a parentId who is a spouse of someone who HAS a parentId.
               const spouseOf = prev.find(s => s.spouseId === p.id);
               if (spouseOf && spouseOf.parentId) return p;
-
               return { ...p, parentId: newId };
             }
             return p;
           });
         } else {
-          // Normal case: just update the specific target's parent
           updated = updated.map(p => p.id === data.targetId ? { ...p, parentId: newId } : p);
         }
       }
-      
       return updated;
     });
 
@@ -133,7 +125,6 @@ const App: React.FC = () => {
 
   const handleInspectData = () => {
     console.group("🌳 LegacyTree Data Inspection");
-    console.log("Current Users Count:", people.length);
     console.table(people.map(p => ({
       ID: p.id,
       Name: p.name,
@@ -141,45 +132,44 @@ const App: React.FC = () => {
       Spouse: p.spouseId || 'None',
       Birth: p.birthDate
     })));
-    console.log("Raw JSON:", JSON.stringify(people, null, 2));
     console.groupEnd();
-    alert("Data logged to browser console! (Press F12 to view)");
+    alert("Data logged to console.");
   };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50">
-      <nav className="h-16 flex items-center justify-between px-6 bg-white border-b border-slate-200 z-40 shadow-sm shrink-0">
+      <nav className="h-14 flex items-center justify-between px-5 bg-white border-b border-slate-200 z-40 shadow-sm shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">L</div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight font-serif">LegacyTree</h1>
+          <div className="w-7 h-7 bg-indigo-600 rounded flex items-center justify-center text-white font-bold text-sm">L</div>
+          <h1 className="text-lg font-bold text-slate-900 tracking-tight font-serif">LegacyTree</h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {!currentUser ? (
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => handleLogin('SUPER_ADMIN')}>Demo Admin</Button>
-              <Button variant="primary" size="sm" onClick={() => handleLogin('SUPER_ADMIN')}>
-                Sign In with Google
+              <Button variant="ghost" size="sm" onClick={() => handleLogin('SUPER_ADMIN')} className="text-xs h-8">Demo Admin</Button>
+              <Button variant="primary" size="sm" onClick={() => handleLogin('SUPER_ADMIN')} className="text-xs h-8">
+                Sign In
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {currentUser.role === 'SUPER_ADMIN' && (
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={handleInspectData} className="text-slate-500">
-                    <span className="mr-2"><ICONS.Terminal /></span> Inspect Data
+                <div className="flex gap-1.5">
+                  <Button variant="ghost" size="sm" onClick={handleInspectData} className="text-slate-500 text-xs h-8">
+                    <span className="mr-1"><ICONS.Terminal /></span> Data
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleAddRoot}>
-                    <span className="mr-2"><ICONS.Plus /></span> New Branch
+                  <Button variant="outline" size="sm" onClick={handleAddRoot} className="text-xs h-8">
+                    <span className="mr-1"><ICONS.Plus /></span> New
                   </Button>
                 </div>
               )}
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{currentUser.role.replace('_', ' ')}</p>
-                <p className="text-sm font-semibold text-slate-700">{currentUser.name}</p>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">{currentUser.role.replace('_', ' ')}</p>
+                <p className="text-xs font-semibold text-slate-700">{currentUser.name}</p>
               </div>
-              <div className="h-8 w-[1px] bg-slate-200" />
-              <button onClick={handleLogout} className="p-2 text-slate-500 hover:text-red-600 rounded-full transition-all">
+              <div className="h-6 w-[1px] bg-slate-200" />
+              <button onClick={handleLogout} className="p-1.5 text-slate-400 hover:text-red-600 rounded-full transition-all">
                 <ICONS.LogOut />
               </button>
             </div>
@@ -197,10 +187,9 @@ const App: React.FC = () => {
         
         {people.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-30">
-            <div className="text-center space-y-4">
-              <h2 className="text-3xl font-serif font-bold text-slate-900">Your Family Story Starts Here</h2>
-              <p className="text-slate-500 max-w-md mx-auto">Create the first record in your lineage to begin visualizing your family history.</p>
-              <Button size="lg" onClick={() => handleOpenAddModal()}>
+            <div className="text-center space-y-3">
+              <h2 className="text-2xl font-serif font-bold text-slate-900">Your Family Story</h2>
+              <Button size="md" onClick={() => handleOpenAddModal()}>
                 Add First Person
               </Button>
             </div>

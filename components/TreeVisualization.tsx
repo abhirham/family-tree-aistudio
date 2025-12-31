@@ -19,16 +19,28 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
   canEdit 
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  
-  // Track expanded nodes.
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  // Helper to find all descendants of a node to ensure deep collapse
+  const getAllDescendantIds = (parentId: string, allPeople: Person[]): string[] => {
+    const children = allPeople.filter(p => p.parentId === parentId);
+    let descendants: string[] = children.map(c => c.id);
+    children.forEach(c => {
+      descendants = [...descendants, ...getAllDescendantIds(c.id, allPeople)];
+    });
+    return descendants;
+  };
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
+        // Collapsing: remove the node and ALL its descendants from the expanded set
+        const descendants = getAllDescendantIds(id, data);
         next.delete(id);
+        descendants.forEach(dId => next.delete(dId));
       } else {
+        // Expanding: just add the node
         next.add(id);
       }
       return next;
@@ -96,17 +108,12 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
     const spouses = data.filter(p => !lineageIds.has(p.id));
 
     const svg = d3.select(svgRef.current);
-    
-    // Create or select the container 'g'
     let g = svg.select<SVGGElement>('g.main-container');
     if (g.empty()) {
       g = svg.append('g').attr('class', 'main-container');
     }
 
-    // Capture current transform before clearing to prevent jumping
     const currentTransform = d3.zoomTransform(svgRef.current as any);
-
-    // Instead of svg.selectAll('*').remove(), we clear the contents of 'g'
     g.selectAll('*').remove();
 
     const width = svgRef.current.clientWidth;
@@ -117,17 +124,14 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
       .on('zoom', (event) => g.attr('transform', event.transform));
 
     svg.call(zoom);
-
-    // Apply the current transform to the newly cleared g to maintain state
     g.attr('transform', currentTransform.toString());
 
-    // Increase horizontal spacing significantly to account for spouses
-    const treeLayout = d3.tree<Person>().nodeSize([500, 260]);
+    // Compact layout settings
+    const treeLayout = d3.tree<Person>().nodeSize([280, 160]);
     const treeData = treeLayout(stratifiedRoot);
 
-    // Initial positioning only if not yet initialized
     if (!svg.attr('data-initialized')) {
-      const initialTransform = d3.zoomIdentity.translate(width / 2, 100).scale(0.6);
+      const initialTransform = d3.zoomIdentity.translate(width / 2, 80).scale(0.8);
       svg.call(zoom.transform, initialTransform);
       g.attr('transform', initialTransform.toString());
       svg.attr('data-initialized', 'true');
@@ -140,7 +144,7 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
       .append('path')
       .attr('fill', 'none')
       .attr('stroke', '#cbd5e1')
-      .attr('stroke-width', 2)
+      .attr('stroke-width', 1.5)
       .attr('d', d3.linkVertical().x((d: any) => d.x).y((d: any) => d.y) as any);
 
     // Nodes
@@ -156,8 +160,10 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
       const childrenExist = (dNode.children || dNode._children)?.length > 0;
       const canToggle = isMainLineage && (spouseExists || childrenExist);
 
-      const cardWidth = 180;
-      const cardHeight = 84;
+      const cardWidth = 140;
+      const cardHeight = 54;
+      const avatarSize = 36;
+      const avatarRadius = avatarSize / 2;
 
       const personG = selection.append('g')
         .attr('transform', `translate(${offsetX}, 0)`)
@@ -172,32 +178,32 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
         .attr('height', cardHeight)
         .attr('x', -cardWidth / 2)
         .attr('y', -cardHeight / 2)
-        .attr('rx', 18)
+        .attr('rx', 12)
         .attr('fill', 'white')
         .attr('stroke', isMainLineage && isExpanded ? '#4f46e5' : '#e2e8f0')
-        .attr('stroke-width', 2)
-        .attr('class', 'transition-all duration-300 group-hover:shadow-lg group-hover:stroke-indigo-400');
+        .attr('stroke-width', 1.5)
+        .attr('class', 'transition-all duration-300 group-hover:shadow-md group-hover:stroke-indigo-400');
 
-      const imgG = personG.append('g').attr('transform', `translate(${-cardWidth/2 + 34}, 0)`);
-      imgG.append('circle').attr('r', 28).attr('fill', '#f8fafc');
+      const imgG = personG.append('g').attr('transform', `translate(${-cardWidth/2 + avatarRadius + 8}, 0)`);
+      imgG.append('circle').attr('r', avatarRadius).attr('fill', '#f8fafc');
       
       const clipId = `clip-${personData.id.replace(/\W/g, '')}`;
-      personG.append('clipPath').attr('id', clipId).append('circle').attr('r', 28);
+      personG.append('clipPath').attr('id', clipId).append('circle').attr('r', avatarRadius);
       
       imgG.append('image')
         .attr('xlink:href', personData.mainImage)
-        .attr('width', 56).attr('height', 56).attr('x', -28).attr('y', -28)
+        .attr('width', avatarSize).attr('height', avatarSize).attr('x', -avatarRadius).attr('y', -avatarRadius)
         .attr('clip-path', `url(#${clipId})`)
         .attr('preserveAspectRatio', 'xMidYMid slice');
 
       personG.append('text')
-        .attr('x', -cardWidth/2 + 70).attr('y', -5)
-        .style('font-size', '14px').style('font-weight', '700').style('fill', '#1e293b')
-        .text(personData.name.length > 14 ? personData.name.substring(0, 11) + '...' : personData.name);
+        .attr('x', -cardWidth/2 + 54).attr('y', -2)
+        .style('font-size', '12px').style('font-weight', '700').style('fill', '#1e293b')
+        .text(personData.name.length > 12 ? personData.name.substring(0, 9) + '...' : personData.name);
       
       personG.append('text')
-        .attr('x', -cardWidth/2 + 70).attr('y', 15)
-        .style('font-size', '11px').style('fill', '#94a3b8').style('font-weight', '500')
+        .attr('x', -cardWidth/2 + 54).attr('y', 14)
+        .style('font-size', '10px').style('fill', '#94a3b8').style('font-weight', '500')
         .text(`${personData.birthDate.split('-')[0]}${personData.deathDate ? ' - ' + personData.deathDate.split('-')[0] : ''}`);
 
       if (canToggle) {
@@ -210,15 +216,15 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
           });
 
         toggleBtn.append('circle')
-          .attr('r', 11)
+          .attr('r', 8)
           .attr('fill', 'white')
           .attr('stroke', '#cbd5e1')
-          .attr('stroke-width', 1.5);
+          .attr('stroke-width', 1);
 
         toggleBtn.append('text')
           .attr('text-anchor', 'middle')
-          .attr('dy', '4')
-          .style('font-size', '15px')
+          .attr('dy', '3')
+          .style('font-size', '11px')
           .style('font-weight', 'bold')
           .style('fill', '#64748b')
           .text(isExpanded ? '−' : '+');
@@ -226,14 +232,14 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
 
       if (canEdit && onAddRelation && isMainLineage) {
         const addBtn = personG.append('g')
-          .attr('transform', `translate(${cardWidth/2 - 25}, ${cardHeight/2})`)
+          .attr('transform', `translate(${cardWidth/2 - 12}, ${cardHeight/2})`)
           .attr('class', 'opacity-0 group-hover:opacity-100 transition-opacity duration-300')
           .on('click', (event: any) => {
             event.stopPropagation();
             onAddRelation(personData.id);
           });
-        addBtn.append('circle').attr('r', 10).attr('fill', '#4f46e5');
-        addBtn.append('path').attr('d', 'M -4 0 L 4 0 M 0 -4 L 0 4').attr('stroke', 'white').attr('stroke-width', 1.5);
+        addBtn.append('circle').attr('r', 8).attr('fill', '#4f46e5');
+        addBtn.append('path').attr('d', 'M -3 0 L 3 0 M 0 -3 L 0 3').attr('stroke', 'white').attr('stroke-width', 1.2);
       }
     };
 
@@ -243,12 +249,12 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
       const isExpanded = expandedIds.has(mainPerson.id);
       const spouse = spouses.find(s => s.spouseId === mainPerson.id);
 
-      const spouseOffset = -210;
+      const spouseOffset = -155;
 
       if (spouse && isExpanded) {
         const linkLine = nodeSelection.append('g').attr('class', 'marriage-link');
-        linkLine.append('line').attr('x1', -120).attr('x2', -90).attr('y1', -5).attr('y2', -5).attr('stroke', '#cbd5e1').attr('stroke-width', 2);
-        linkLine.append('line').attr('x1', -120).attr('x2', -90).attr('y1', 5).attr('y2', 5).attr('stroke', '#cbd5e1').attr('stroke-width', 2);
+        linkLine.append('line').attr('x1', -85).attr('x2', -70).attr('y1', -3).attr('y2', -3).attr('stroke', '#cbd5e1').attr('stroke-width', 1.5);
+        linkLine.append('line').attr('x1', -85).attr('x2', -70).attr('y1', 3).attr('y2', 3).attr('stroke', '#cbd5e1').attr('stroke-width', 1.5);
 
         renderPersonNode(nodeSelection, mainPerson, 0, true, d);
         renderPersonNode(nodeSelection, spouse, spouseOffset, false, d);
@@ -261,16 +267,16 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
 
   return (
     <div className="w-full h-full bg-slate-50 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#4f46e5 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#4f46e5 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
       
-      <div className="absolute bottom-6 left-6 z-10 bg-white/80 backdrop-blur shadow-sm rounded-xl px-4 py-2 border border-slate-200 text-xs text-slate-500 font-medium space-y-1">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-indigo-600" />
-          <span>Parent lineage line points to blood descendant</span>
+      <div className="absolute bottom-4 left-4 z-10 bg-white/90 backdrop-blur shadow-sm rounded-lg px-3 py-1.5 border border-slate-200 text-[10px] text-slate-500 font-medium space-y-0.5">
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+          <span>Lineage points to blood descendant</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full border border-slate-400 bg-white flex items-center justify-center text-[10px]">+</div>
-          <span>Click to reveal spouse & branches</span>
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full border border-slate-400 bg-white flex items-center justify-center text-[8px]">+</div>
+          <span>Toggle spouse & branches</span>
         </div>
       </div>
 
