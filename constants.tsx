@@ -11,7 +11,11 @@ export const INITIAL_DATA: Person[] = [
     deathDate: '1995-11-20',
     bio: 'The patriarch of the Harrison family. A decorated veteran and master carpenter who built the family estate by hand.',
     mainImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400&h=400',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1544161515-4af6b1d462c2?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1490190191206-1262f22145e4?auto=format&fit=crop&q=80&w=400&h=400'
+    ],
   },
   // Martha's Branch
   {
@@ -21,7 +25,10 @@ export const INITIAL_DATA: Person[] = [
     birthDate: '1945-08-22',
     bio: 'A visionary educator who served as Dean of Arts. Known for her love of classical literature and gardening.',
     mainImage: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400&h=400',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1466721591356-1d00f9431052?auto=format&fit=crop&q=80&w=400&h=400'
+    ],
     parentId: 'root-1',
     spouseId: 'spouse-martha',
   },
@@ -33,7 +40,10 @@ export const INITIAL_DATA: Person[] = [
     deathDate: '2015-06-14',
     bio: 'A renowned surgeon and amateur cellist. He met Martha during a faculty mixer in 1968.',
     mainImage: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=400&h=400',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=400&h=400'
+    ],
     spouseId: 'child-1',
   },
   {
@@ -43,7 +53,10 @@ export const INITIAL_DATA: Person[] = [
     birthDate: '1970-11-05',
     bio: 'An environmental lawyer based in Portland. She continues her mother\'s legacy of community service.',
     mainImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=400&h=400',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1589216532372-1c2a11f90e6a?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=400&h=400'
+    ],
     parentId: 'child-1',
   },
   // Arthur's Branch
@@ -54,7 +67,10 @@ export const INITIAL_DATA: Person[] = [
     birthDate: '1948-03-15',
     bio: 'A passionate architect who specialized in sustainable urban design. He spent decades traveling the world.',
     mainImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400&h=400',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1503387762-592dea58ef23?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1487958449913-d92a6c1d02fe?auto=format&fit=crop&q=80&w=400&h=400'
+    ],
     parentId: 'root-1',
     spouseId: 'spouse-arthur',
   },
@@ -65,7 +81,10 @@ export const INITIAL_DATA: Person[] = [
     birthDate: '1952-12-01',
     bio: 'A professional landscape photographer. Her work often captured the serenity of the family\'s country home.',
     mainImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400&h=400',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&q=80&w=400&h=400'
+    ],
     spouseId: 'child-2',
   },
   // Arthur's 5 Children
@@ -76,7 +95,10 @@ export const INITIAL_DATA: Person[] = [
     birthDate: '1975-06-12',
     bio: 'An interior designer who brings warmth and modern aesthetics to every project.',
     mainImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400&h=400',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400&h=400'
+    ],
     parentId: 'child-2',
   },
   {
@@ -86,7 +108,10 @@ export const INITIAL_DATA: Person[] = [
     birthDate: '1978-09-22',
     bio: 'A commercial pilot with a love for high-altitude photography.',
     mainImage: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=400&h=400',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1436491865332-7a61a109c0f3?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?auto=format&fit=crop&q=80&w=400&h=400'
+    ],
     parentId: 'child-2',
   },
   {
@@ -96,7 +121,10 @@ export const INITIAL_DATA: Person[] = [
     birthDate: '1982-02-14',
     bio: 'Software engineer and tech enthusiast. Founder of several successful startups.',
     mainImage: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400&h=400',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=400&h=400'
+    ],
     parentId: 'child-2',
   },
   {
@@ -106,7 +134,10 @@ export const INITIAL_DATA: Person[] = [
     birthDate: '1985-05-30',
     bio: 'A dedicated marine biologist working on coral reef restoration.',
     mainImage: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&q=80&w=400&h=400',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1454165833767-027ffea9e77b?auto=format&fit=crop&q=80&w=400&h=400'
+    ],
     parentId: 'child-2',
   },
   {
@@ -116,7 +147,10 @@ export const INITIAL_DATA: Person[] = [
     birthDate: '1988-11-11',
     bio: 'An accomplished pastry chef and owner of "The Sweet Legacy" bakery.',
     mainImage: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?auto=format&fit=crop&q=80&w=400&h=400',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1495147466023-ac5c588e2e94?auto=format&fit=crop&q=80&w=400&h=400'
+    ],
     parentId: 'child-2',
   },
   // Grandchild from Michael
@@ -127,7 +161,10 @@ export const INITIAL_DATA: Person[] = [
     birthDate: '2015-07-04',
     bio: 'A curious and energetic young boy who loves building with blocks and drawing.',
     mainImage: 'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&q=80&w=400&h=400',
-    gallery: [],
+    gallery: [
+      'https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?auto=format&fit=crop&q=80&w=400&h=400',
+      'https://images.unsplash.com/photo-1537673156864-5d2c82633399?auto=format&fit=crop&q=80&w=400&h=400'
+    ],
     parentId: 'arthur-child-3',
   }
 ];

@@ -126,8 +126,10 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
     svg.call(zoom);
     g.attr('transform', currentTransform.toString());
 
-    // Compact layout settings
-    const treeLayout = d3.tree<Person>().nodeSize([280, 160]);
+    // Adjusted nodeSize to 320 (width) and 160 (height)
+    // This provides enough room for spouse cards (approx 150px offset) 
+    // without creating massive gaps between branches.
+    const treeLayout = d3.tree<Person>().nodeSize([320, 160]);
     const treeData = treeLayout(stratifiedRoot);
 
     if (!svg.attr('data-initialized')) {
@@ -253,6 +255,7 @@ export const TreeVisualization: React.FC<TreeVisualizationProps> = ({
 
       if (spouse && isExpanded) {
         const linkLine = nodeSelection.append('g').attr('class', 'marriage-link');
+        // Marriage double line connection
         linkLine.append('line').attr('x1', -85).attr('x2', -70).attr('y1', -3).attr('y2', -3).attr('stroke', '#cbd5e1').attr('stroke-width', 1.5);
         linkLine.append('line').attr('x1', -85).attr('x2', -70).attr('y1', 3).attr('y2', 3).attr('stroke', '#cbd5e1').attr('stroke-width', 1.5);
 
